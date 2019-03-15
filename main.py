@@ -1,13 +1,6 @@
 import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, Filters
-from flask import Flask
-app = Flask(__name__)
-@app.route("/")
-
-
-
-
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -105,4 +98,4 @@ def main():
 
 
 if __name__ == "__main__":
-    app.run()
+    main()
