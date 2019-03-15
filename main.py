@@ -1,5 +1,6 @@
-import logging
+from flask import Flask
 
+import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, Filters
 
@@ -97,6 +98,14 @@ def main():
     # SIGTERM or SIGABRT
     updater.idle()
 
+app = Flask(__name__)
+
+
+@app.route('/')
+def main():
+    return 'Hello, World!'
+
 
 if __name__ == '__main__':
-    main()
+    app.run(debug=True)
+
