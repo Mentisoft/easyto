@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # This program is dedicated to the public domain under the CC0 license.
 
-from flask import Flask
+##from flask import Flask
 import logging
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
@@ -15,7 +15,7 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
-app = Flask(__name__)
+##app = Flask(__name__)
 
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
@@ -290,7 +290,7 @@ def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, error)
 
-@app.route('/')
+##@app.route('/')
 def main():
     # Create the Updater and pass it your bot's token.
     # Make sure to set use_context=True to use the new context based callbacks
@@ -472,7 +472,7 @@ def main():
     # Run the bot until you press Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
-##    updater.idle()
+    updater.idle()
     return "Bot is working now."
 
 def read_records(mode, arg1='', arg2='', arg3=[]):
@@ -563,18 +563,7 @@ def read_records(mode, arg1='', arg2='', arg3=[]):
 ##import datetime
 
 ##read_records('bookings')
-
-
-
-
-
-
-
-
-
 ##print(dates_buttons)
-
-
 
 def generate_buttons(values, mode=''):
     buttons = []
@@ -643,8 +632,8 @@ def read_tos():
     return unique_tos
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=8080, debug=True)
-##    main()
+##    app.run(host='127.0.0.1', port=8080, debug=True)
+    main()
 
 ##print(read_tos())
 
