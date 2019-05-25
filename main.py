@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 (START_ACTION, MAIN_MENU_ACTION, BOOK_MENU_ACTION, PRICE_MENU_ACTION,
  STATUS_MENU_ACTION, TYPING_REPLY, TYPING_CHOICE, BOOK_DATE_ACTION, BOOK_TIME_ACTION,
  BOOK_AUTO_ACTION, BOOK_REG_ACTION, BOOK_TO_ACTION, BOOK_COMMENTS_ACTION,
- BOOK_CONFIRM_ACTION, BOOK_ENGINE_ACTION) = range(15)
+ BOOK_CONFIRM_ACTION, BOOK_ENGINE_ACTION, CARPLATE_DB_ACTION) = range(16)
 
 def start(update, context):
     
@@ -58,12 +58,11 @@ def stop(update, context):
 def main_menu(update, context):
     
     reply_keyboard = [['\u260e Контакты', '\u274c Стоп'],['Записаться на ТО'],
-                      ['Рассчитать стоимость ТО'],['Проверить статус заявки']]
+                      ['Рассчитать стоимость ТО'],['Проверить статус заявки'], ['База номеров']]
     update.message.reply_text('Выберите желаемое действие.',
         reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True))
    
     return MAIN_MENU_ACTION
-
 
 def book(update, context):
     user = update.message.from_user
@@ -190,6 +189,34 @@ def book_comments(update, context):
         'Укажите дополнительные комментарии.',
         reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True))
     return BOOK_COMMENTS_ACTION
+
+def carplate_db(update, context):
+
+##    text = update.message.text
+##    context.user_data['to'] = text
+    
+    reply_keyboard = [['\u2b05 Назад', '\u274c Стоп']]
+    update.message.reply_text(
+        'Введите номерной знак.',
+        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True))
+    return CARPLATE_DB_ACTION
+
+def get_car_details(update, context):
+
+    msg = 'Загрузка данных...'
+    update.message.reply_text(
+        msg)
+
+
+    text = update.message.text
+    msg = get_car_details_db(text)
+    if msg == '':
+        msg = 'Машина не найдена, попробуйте другой номер.'
+    reply_keyboard = [['\u2b05 Назад', '\u274c Стоп']]
+    update.message.reply_text(
+        msg,
+        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True))
+    return CARPLATE_DB_ACTION
 
 def book_confirm(update, context):
     
@@ -319,11 +346,26 @@ def main():
                        RegexHandler('^Проверить статус заявки$',
                                     not_ready,
                                     pass_user_data=True),
+                       RegexHandler('^База номеров$',
+                                    carplate_db,
+                                    pass_user_data=True),
                        RegexHandler('^\u260e Контакты$',
                                     not_ready,
                                     pass_user_data=True),
                        RegexHandler('^\u274c Стоп$',
                                     stop,
+                                    pass_user_data=True)
+                       ],
+
+            CARPLATE_DB_ACTION: [
+                       RegexHandler('^\u2b05 Назад$',
+                                    main_menu,
+                                    pass_user_data=True),
+                       RegexHandler('^\u274c Стоп$',
+                                    stop,
+                                    pass_user_data=True),
+                        MessageHandler(Filters.text,
+                                    get_car_details,
                                     pass_user_data=True)
                        ],
 
@@ -472,7 +514,7 @@ def main():
     # Run the bot until you press Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
-##    updater.idle()
+    ##updater.idle()
     return "Bot is working now."
 
 def read_records(mode, arg1='', arg2='', arg3=[]):
@@ -553,6 +595,31 @@ def read_records(mode, arg1='', arg2='', arg3=[]):
                 if car not in cars:
                     cars.append(car)
             return cars
+def index():
+    votes = []
+    with db.connect() as conn:
+        # Execute the query and fetch all results
+        recent_votes = conn.execute(
+            "SELECT candidate, time_cast FROM votes "
+            "ORDER BY time_cast DESC LIMIT 5"
+        ).fetchall()
+        # Convert the results into a list of dicts representing votes
+        for row in recent_votes:
+            votes.append({
+                'candidate': row[0],
+                'time_cast': row[1]
+            })
+
+        stmt = sqlalchemy.text(
+            "SELECT COUNT(vote_id) FROM votes WHERE candidate=:candidate")
+        # Count number of votes for tabs
+        tab_result = conn.execute(stmt, candidate="TABS").fetchone()
+        tab_count = tab_result[0]
+        # Count number of votes for spaces
+        space_result = conn.execute(stmt, candidate="SPACES").fetchone()
+        space_count = space_result[0]
+
+
 
 ##thisdict =	{
 ##  "brand": "Ford",
@@ -563,13 +630,6 @@ def read_records(mode, arg1='', arg2='', arg3=[]):
 ##import datetime
 
 ##read_records('bookings')
-
-
-
-
-
-
-
 
 
 ##print(dates_buttons)
@@ -642,9 +702,38 @@ def read_tos():
             unique_tos.append(unique_to)
     return unique_tos
 
+def get_car_details_db(carplate):
+    
+    import pymysql
+    pymysql.install_as_MySQLdb()
+    import MySQLdb
+    db = MySQLdb.connect("35.185.88.63" , "root" , "admin")
+    cur = db.cursor()
+    cur.execute("use easytodb")
+    sql_string = "SELECT d_reg, brand, model, make_year, color, fuel, capacity, n_reg_new FROM reestr WHERE n_reg_new='"+carplate.upper()+"\\r'"
+    cur.execute(sql_string)
+    result = []
+    for row in cur.fetchall():
+        result.append(row)
+##    print(result[0][0])
+##    assert 0
+    result_str = ''
+    for row in result:
+        for field in row:
+##            print(result_str)
+            result_str += field + ', '
+        result_str = result_str[:-2]
+        result_str += '\n\n'
+    
+
+    db.close()
+    return result_str
+
+##print(get_car_details('АА0103РА'))
+
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=8080, debug=True)
-##    main()
+##    app.run(host='127.0.0.1', port=8080, debug=True)
+    main()
 
 ##print(read_tos())
 
