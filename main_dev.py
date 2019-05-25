@@ -45,6 +45,8 @@ KEYBOARD_BACK_STOP = [['\u2b05 Назад', '\u274c Стоп']]
 KEYBOARD_MAIN = [['\u260e Контакты', '\u274c Стоп'],['Записаться на ТО'],
                           ['Рассчитать стоимость ТО'],['Проверить статус заявки'], ['База номеров']]
 KEYBOARD_BOOK = [['Выбрать дату и время'],['Показать все записи']]
+KEYBOARD_SKIP = [['Пропустить']]
+KEYBOARD_CONFIRM = [['Подтвердить запись']]
 
 # MSGs
 MSG_START = 'Привет! Я помогу вам записаться на ТО, рассчитать стоимость ' \
@@ -60,7 +62,7 @@ MSG_ENG =   'Укажите двигатель.'
 MSG_TO =    'Укажите ТО или введите текущий пробег автомобиля.'
 MSG_COMM =  'Укажите дополнительные комментарии.'
 MSG_PLATE = 'Введите номерной знак.'
-MSG_PLATE_NOT_FOUND =   'Машина не найдена, попробуйте другой номер.'
+MSG_NOT_FOUND = 'Машина не найдена, попробуйте другой номер.'
 MSG_NOT_READY = 'Это пока не готово :)'
 
 # Main
@@ -112,6 +114,8 @@ def book(update, context):
 
 def book_date(update, context):
     send_log_msg(update)
+    reply_msg = 'Загрузка данных...'
+    update.message.reply_text(reply_msg)
     dates = read_records('dates')
     keyboard = generate_buttons(dates)
     reply_msg = MSG_DATE
@@ -120,106 +124,60 @@ def book_date(update, context):
     return BOOK_DATE_ACTION
 
 def book_time(update, context):
-
+    send_log_msg(update)
     text = update.message.text
     context.user_data['date'] = text
     dateslot = text.split()
     date = dateslot[1]
+    reply_msg = 'Загрузка данных...'
+    update.message.reply_text(reply_msg)
     times = read_records('times', date)
-    times_buttons = []
-    k = 0
-    m = 0
-    for i in range(len(times)):
-        if k == 0:
-            times_buttons.append([times[i]])
-            k+=1
-        else:
-            times_buttons[m].append(times[i])
-            m+=1
-            k=0   
-    times_buttons = [['\u2b05 Назад', '\u274c Стоп']] + times_buttons
-    reply_keyboard = times_buttons
-    update.message.reply_text(
-        'Выберите время.',
-        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True))
+    keyboard = generate_buttons(times)
+    reply_msg = MSG_TIME
+    reply_markup = get_reply_markup(KEYBOARD_BACK_STOP + keyboard)
+    update.message.reply_text(reply_msg, reply_markup=reply_markup)
     return BOOK_TIME_ACTION
 
 def book_auto(update, context):
-
-
+    send_log_msg(update)
     text = update.message.text
     context.user_data['time'] = text
-
-    reply_keyboard = generate_buttons(read_cars())
-    update.message.reply_text(
-        'Веберите модель вашего автомобиля.',
-        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True))
+    keyboard = generate_buttons(read_cars())
+    reply_msg = MSG_MODEL
+    reply_markup = get_reply_markup(KEYBOARD_BACK_STOP + keyboard)
+    update.message.reply_text(reply_msg, reply_markup=reply_markup)
     return BOOK_AUTO_ACTION
 
 def book_engine(update, context):
-
-
+    send_log_msg(update)
     text = update.message.text
     context.user_data['auto'] = text
-
-    reply_keyboard = generate_buttons(read_engines(text))
-    update.message.reply_text(
-        'Укажите двигатель.',
-        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True))
+    keyboard = generate_buttons(read_engines(text))
+    reply_msg = MSG_ENG
+    reply_markup = get_reply_markup(KEYBOARD_BACK_STOP + keyboard)
+    update.message.reply_text(reply_msg, reply_markup=reply_markup)
     return BOOK_ENGINE_ACTION
 
 def book_to(update, context):
-
-
+    send_log_msg(update)
     text = update.message.text
     context.user_data['engine'] = text
-
-    reply_keyboard = generate_buttons(read_tos())
-    update.message.reply_text(
-        'Укажите ТО или введите текущий пробег автомобиля.',
-        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True))
+    keyboard = generate_buttons(read_tos())
+    reply_msg = MSG_TO
+    reply_markup = get_reply_markup(KEYBOARD_BACK_STOP + keyboard)
+    update.message.reply_text(reply_msg, reply_markup=reply_markup)
     return BOOK_TO_ACTION
 
 def book_comments(update, context):
-
+    send_log_msg(update)
     text = update.message.text
     context.user_data['to'] = text
-    
-    reply_keyboard = [['\u2b05 Назад', '\u274c Стоп'],['Пропустить']]
-    update.message.reply_text(
-        'Укажите дополнительные комментарии.',
-        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True))
+    reply_msg = MSG_COMM
+    reply_markup = get_reply_markup(KEYBOARD_BACK_STOP + KEYBOARD_SKIP)
+    update.message.reply_text(reply_msg, reply_markup=reply_markup)
     return BOOK_COMMENTS_ACTION
 
-def carplate_db(update, context):
-    
-    reply_keyboard = [['\u2b05 Назад', '\u274c Стоп']]
-    update.message.reply_text(
-        'Введите номерной знак.',
-        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True))
-    return CARPLATE_DB_ACTION
-
-def get_car_details(update, context):
-
-    msg = 'Загрузка данных...'
-    update.message.reply_text(
-        msg)
-
-
-    text = update.message.text
-    msg = get_car_details_db(text)
-    if msg == '':
-        msg = 'Машина не найдена, попробуйте другой номер.'
-    reply_keyboard = [['\u2b05 Назад', '\u274c Стоп']]
-    update.message.reply_text(
-        msg,
-        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True))
-    return CARPLATE_DB_ACTION
-
-def book_confirm(update, context):
-    
-    text = update.message.text
-    context.user_data['comments'] = text
+def get_confirm_msg(update, context):
     user = update.message.from_user
     reply_keyboard = [['\u2b05 Назад', '\u274c Стоп'],['Подтвердить запись']]
     text = 'Отлично! Проверьте пожалуйста данные:\n\n' \
@@ -231,12 +189,19 @@ def book_confirm(update, context):
            + ' - ТО: ' + context.user_data['to'] + '\n' \
            + ' - Комментарии: ' + context.user_data['comments'] + '\n' \
            + '\n' + 'Примерная стоимость ТО - 8428 грн'
-    update.message.reply_text(text,
-        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True))
+    return text
+
+def book_confirm(update, context):
+    send_log_msg(update)
+    text = update.message.text
+    context.user_data['comments'] = text
+    reply_msg = get_confirm_msg(update, context)
+    reply_markup = get_reply_markup(KEYBOARD_BACK_STOP + KEYBOARD_CONFIRM)
+    update.message.reply_text(reply_msg, reply_markup=reply_markup)
     return BOOK_CONFIRM_ACTION
 
 def write_data(update, context):
-
+    send_log_msg(update)
     user_data = context.user_data
     dateslot = user_data['date'].split()
     date = dateslot[1]
@@ -245,68 +210,37 @@ def write_data(update, context):
     write_data = [user.full_name, context.user_data['auto'], '', 'ТО ' + context.user_data['to'],
                 context.user_data['comments']]
     read_records('book',date,time,write_data)
-
     reply_keyboard = [['Старт']]
     update.message.reply_text(
         'Запись произведена успешно! Номер вашей заявки: 14580.',
         reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True))
     return START_ACTION
 
+def carplate_db(update, context):
+    send_log_msg(update)
+    reply_msg = MSG_PLATE
+    reply_markup = get_reply_markup(KEYBOARD_BACK_STOP)
+    update.message.reply_text(reply_msg, reply_markup=reply_markup)
+    return CARPLATE_DB_ACTION
+
+def get_car_details(update, context):
+    send_log_msg(update)
+    reply_msg = 'Загрузка данных...'
+    update.message.reply_text(reply_msg)
+    text = update.message.text
+    reply_msg = get_car_details_db(text)
+    if reply_msg == '':
+        reply_msg = MSG_NOT_FOUND
+    reply_markup = get_reply_markup(KEYBOARD_BACK_STOP)
+    update.message.reply_text(reply_msg, reply_markup=reply_markup)
+    return CARPLATE_DB_ACTION
 
 def not_ready(update, context):
-    user = update.message.from_user
-    logger.info("PRICE_MENU_ACTION of %s: %s", user.full_name, update.message.text)
-    
-    reply_keyboard = [['\u260e Контакты', '\u274c Стоп'],['Записаться на ТО'],
-                      ['Рассчитать стоимость ТО'],['Проверить статус заявки']]
-    update.message.reply_text(
-        'Это пока не готово :)',
-        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, resize_keyboard=True))
-    return main_ACTION
-
-def regular_choice(update, context):
-    text = update.message.text
-    context.user_data['choice'] = text
-    update.message.reply_text(
-        'Your {}? Yes, I would love to hear about that!'.format(text.lower()))
-
-    return TYPING_REPLY
-
-
-def custom_choice(update, context):
-    update.message.reply_text('Alright, please send me the category first, '
-                              'for example "Most impressive skill"')
-
-    return TYPING_CHOICE
-
-
-def received_information(update, context):
-    user_data = context.user_data
-    text = update.message.text
-    category = user_data['choice']
-    user_data[category] = text
-    del user_data['choice']
-
-    update.message.reply_text("Neat! Just so you know, this is what you already told me:"
-                              "{}"
-                              "You can tell me more, or change your opinion on something.".format(
-                                  facts_to_str(user_data)), reply_markup=markup)
-
-    return CHOOSING
-
-
-def done(update, context):
-    user_data = context.user_data
-    if 'choice' in user_data:
-        del user_data['choice']
-
-    update.message.reply_text("I learned these facts about you:"
-                              "{}"
-                              "Until next time!".format(facts_to_str(user_data)))
-
-    user_data.clear()
-    return ConversationHandler.END
-
+    send_log_msg(update)
+    reply_msg = MSG_NOT_READY
+    reply_markup = get_reply_markup(KEYBOARD_MAIN)
+    update.message.reply_text(reply_msg, reply_markup=reply_markup)
+    return MAIN_MENU_ACTION
 
 def error(update, context):
     """Log Errors caused by Updates."""
@@ -337,8 +271,7 @@ def main():
             START_ACTION: [MessageHandler(Filters.regex('^Старт$'),
                                     main_menu,
                                     pass_user_data=True)
-                       ],
-            
+                       ],   
             MAIN_MENU_ACTION: [MessageHandler(Filters.regex('^Записаться на ТО$'),
                                     book,
                                     pass_user_data=True),
@@ -358,10 +291,9 @@ def main():
                                     stop,
                                     pass_user_data=True)
                        ],
-
             CARPLATE_DB_ACTION: [
                        MessageHandler(Filters.regex('^\u2b05 Назад$'),
-                                    main,
+                                    main_menu,
                                     pass_user_data=True),
                        MessageHandler(Filters.regex('^\u274c Стоп$'),
                                     stop,
@@ -370,7 +302,6 @@ def main():
                                     get_car_details,
                                     pass_user_data=True)
                        ],
-
             BOOK_MENU_ACTION: [MessageHandler(Filters.regex('^Выбрать дату и время$'),
                                     book_date,
                                     pass_user_data=True),
@@ -378,13 +309,12 @@ def main():
                                     not_ready,
                                     pass_user_data=True),
                        MessageHandler(Filters.regex('^\u2b05 Назад$'),
-                                    main,
+                                    main_menu,
                                     pass_user_data=True),
                        MessageHandler(Filters.regex('^\u274c Стоп$'),
                                     stop,
                                     pass_user_data=True)
                        ],
-
             BOOK_DATE_ACTION: [MessageHandler(Filters.regex('^\u2b05 Назад$'),
                                     book,
                                     pass_user_data=True),
@@ -395,7 +325,6 @@ def main():
                                     book_time,
                                     pass_user_data=True)
                        ],
-            
             BOOK_TIME_ACTION: [MessageHandler(Filters.regex('^\u2b05 Назад$'),
                                     book_date,
                                     pass_user_data=True),
@@ -416,7 +345,6 @@ def main():
                                     book_engine,
                                     pass_user_data=True)
                        ],
-
             BOOK_ENGINE_ACTION: [MessageHandler(Filters.regex('^\u2b05 Назад$'),
                                     book_date,
                                     pass_user_data=True),
@@ -427,7 +355,6 @@ def main():
                                     book_to,
                                     pass_user_data=True)
                        ],
-
             BOOK_TO_ACTION: [MessageHandler(Filters.regex('^\u2b05 Назад$'),
                                     book_auto,
                                     pass_user_data=True),
@@ -458,31 +385,13 @@ def main():
                                     write_data,
                                     pass_user_data=True)
                        ],
-            
             PRICE_MENU_ACTION: [MessageHandler(Filters.text,
                                            not_ready,
                                            pass_user_data=True),
-                            ],
-            STATUS_MENU_ACTION: [MessageHandler(Filters.text,
-                                           not_ready,
-                                           pass_user_data=True)
-                            ],
-    
-
-            TYPING_CHOICE: [MessageHandler(Filters.text,
-                                           regular_choice,
-                                           pass_user_data=True)
-                            ],
-
-            TYPING_REPLY: [MessageHandler(Filters.text,
-                                          received_information,
-                                          pass_user_data=True)
-                           ],
+                            ]
         },
-
-        fallbacks=[MessageHandler(Filters.regex('^Done$'), done, pass_user_data=True)]
+        fallbacks=[MessageHandler(Filters.regex('^\u274c Стоп$'), stop, pass_user_data=True)]
     )
-
     dp.add_handler(conv_handler)
 
     # log all errors
@@ -561,7 +470,7 @@ def read_records(mode, arg1='', arg2='', arg3=[]):
                     result = service.spreadsheets().values().update(
                         spreadsheetId=SAMPLE_SPREADSHEET_ID, range=target_range,
                         valueInputOption='RAW', body=body).execute()
-                    print('{0} cells updated.'.format(result.get('updatedCells')))
+##                    print('{0} cells updated.'.format(result.get('updatedCells')))
         elif mode == 'cars':
             cars = []
             for row in values:
@@ -673,14 +582,10 @@ def get_car_details_db(carplate):
             result_str += field + ', '
         result_str = result_str[:-2]
         result_str += '\n\n'
-    
-
     db.close()
     return result_str
 
-
 if __name__ == '__main__':
-##    app.run(host='127.0.0.1', port=8080, debug=True)
     main()
 
 
